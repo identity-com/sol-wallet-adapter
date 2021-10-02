@@ -215,7 +215,7 @@ export default class Wallet extends EventEmitter {
 
   async signTransactionExtIF(transaction: Transaction): Promise<Transaction> {
     const response = (await this.sendRequest('signTransaction', {
-      transaction: bs58.encode(transaction.serialize()),
+      transaction: bs58.encode(transaction.serialize({ verifySignatures: false })),
     })) as { transaction: string};
     return Transaction.from(bs58.decode(response.transaction))
   }
@@ -224,7 +224,7 @@ export default class Wallet extends EventEmitter {
     transactions: Transaction[],
   ): Promise<Transaction[]> {
     const response = (await this.sendRequest('signAllTransactions', {
-      transactions: transactions.map((tx) => bs58.encode(tx.serialize())),
+      transactions: transactions.map((tx) => bs58.encode(tx.serialize({ verifySignatures: false }))),
     })) as { transactions: string[] };
     return response.transactions.map(t => Transaction.from(bs58.decode(t)))
   }
