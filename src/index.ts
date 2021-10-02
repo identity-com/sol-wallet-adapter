@@ -17,7 +17,7 @@ export default class Wallet extends EventEmitter {
     [(value: string) => void, (reason: Error) => void]
   > = new Map();
 
-  constructor(provider: unknown, private _network: string) {
+  constructor(provider: unknown, private _network: string, defaultExtIF: boolean = false) {
     super();
     if (isInjectedProvider(provider)) {
       this._injectedProvider = provider;
@@ -31,6 +31,11 @@ export default class Wallet extends EventEmitter {
       throw new Error(
         'provider parameter must be an injected provider or a URL string.',
       );
+    }
+
+    if (defaultExtIF) {
+      this.signTransaction = this.signTransactionExtIF
+      this.signAllTransactions = this.signAllTransactionsExtIF
     }
   }
 
@@ -206,6 +211,22 @@ export default class Wallet extends EventEmitter {
       signature,
       publicKey,
     };
+  }
+
+  async signTransactionExtIF(transaction: Transaction): Promise<Transaction> {
+    const response = (await this.sendRequest('signTransaction', {
+      transaction: bs58.encode(transaction.serialize()),
+    })) as { transaction: string};
+    return Transaction.from(bs58.decode(response.transaction))
+  }
+
+  async signAllTransactionsExtIF(
+    transactions: Transaction[],
+  ): Promise<Transaction[]> {
+    const response = (await this.sendRequest('signAllTransactions', {
+      transactions: transactions.map((tx) => bs58.encode(tx.serialize())),
+    })) as { transactions: string[] };
+    return response.transactions.map(t => Transaction.from(bs58.decode(t)))
   }
 
   async signTransaction(transaction: Transaction): Promise<Transaction> {
